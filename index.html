@@ -783,6 +783,21 @@
       .main { margin-left: 0; }
     }
 
+
+    .task-title-cell.clickable,
+    a.task-title-link {
+      color: var(--primary);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .task-title-cell.clickable:hover,
+    a.task-title-link:hover {
+      text-decoration: underline;
+      color: var(--primary-dark);
+    }
+    .kanban-card-title.clickable { cursor: pointer; color: var(--text); }
+    .kanban-card-title.clickable:hover { color: var(--primary); text-decoration: underline; }
+
   </style>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -876,6 +891,16 @@
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           Nova Tarefa
         </button>
+<button class="nav-item" data-panel="checklist">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          Checklist
+          <span class="nav-count" id="nav-count-checklist">0</span>
+        </button>
+<button class="nav-item" data-panel="dicas">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          Dicas e manuais
+          <span class="nav-count" id="nav-count-dicas">0</span>
+        </button>
         <button class="nav-item" data-panel="concluidas">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           Concluídas
@@ -900,17 +925,7 @@
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           Calendário
         </button>
-        <button class="nav-item" data-panel="checklist">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-          Checklist
-          <span class="nav-count" id="nav-count-checklist">0</span>
-        </button>
-        <button class="nav-item" data-panel="dicas">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-          Dicas e manuais
-          <span class="nav-count" id="nav-count-dicas">0</span>
-        </button>
-        <button class="nav-item" data-panel="historico">
+                        <button class="nav-item" data-panel="historico">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           Histórico
         </button>
@@ -1976,6 +1991,10 @@
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfg-mod-arquivadas" checked /> Arquivadas</label>
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfg-mod-backup" checked /> Backup</label>
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfg-mod-relatorio" checked /> Relatório (resumo)</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfg-mod-calendario" checked /> Calendário</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfg-mod-checklist" checked /> Checklist</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfg-mod-dicas" checked /> Dicas e manuais</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfg-mod-historico" checked /> Histórico</label>
               </div>
               <div class="form-actions" style="margin-top:12px">
                 <button type="button" class="btn btn-primary" onclick="saveModuleSettings()">Salvar módulos</button>
@@ -2150,7 +2169,7 @@
     // ========== SUPABASE (GitHub Pages / cloud) ==========
     // Cole suas chaves em Settings → API (anon public JWT, começa com eyJ...)
     const SUPABASE_URL = 'https://zdnyjeuqvjqlnhtryzqx.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_wAPvyaH-1Hi__jZpxIAHUw_euOiFSIt';
+    const SUPABASE_ANON_KEY = 'COLE_SUA_ANON_KEY_AQUI';
 
     const supabaseReady = typeof supabase !== 'undefined'
       && SUPABASE_URL.startsWith('http')
@@ -2474,6 +2493,11 @@
       };
       Object.keys(map).forEach(key => {
         document.querySelectorAll(map[key]).forEach(el => {
+          // Checklist e Dicas sempre visíveis
+          if (key === 'checklist' || key === 'dicas') {
+            el.style.display = '';
+            return;
+          }
           el.style.display = m[key] === false ? 'none' : '';
         });
       });
@@ -3209,7 +3233,7 @@
         <tr class="${isOpen(t) && isOverdue(t.date) ? 'overdue' : ''}">
           <td><input type="checkbox" class="bulk-check" data-id="${t.id}" ${bulkSelected.has(t.id) ? 'checked' : ''} onchange="toggleBulkItem('${t.id}', this.checked)" /></td>
           <td>
-            <div class="task-title-cell">${escapeHtml(t.title)}</div>
+            <div class="task-title-cell clickable" onclick="editTask('${t.id}')" title="Clique para abrir">${escapeHtml(t.title)}</div>
             ${t.notes ? `<div class="task-notes">${escapeHtml(t.notes)}</div>` : ''}
             ${t.equipmentCode ? `<div class="task-notes">💻 Equip. ${escapeHtml(t.equipmentCode)}</div>` : ''}
             ${(t.attachments && t.attachments.length) ? `<div class="task-notes">📎 ${t.attachments.length} anexo(s)</div>` : ''}
@@ -3257,7 +3281,7 @@
       tbody.innerHTML = tasks.map(t => `
         <tr>
           <td>
-            <div class="task-title-cell">${escapeHtml(t.title)}</div>
+            <div class="task-title-cell clickable" onclick="editTask('${t.id}')" title="Clique para abrir">${escapeHtml(t.title)}</div>
             ${t.completionNote ? `<div class="task-notes">📝 ${escapeHtml(t.completionNote)}</div>` : ''}
             ${t.notes ? `<div class="task-notes">${escapeHtml(t.notes)}</div>` : ''}
           </td>
@@ -3292,7 +3316,7 @@
       tbody.innerHTML = tasks.map(t => `
         <tr>
           <td>
-            <div class="task-title-cell">${escapeHtml(t.title)}</div>
+            <div class="task-title-cell clickable" onclick="editTask('${t.id}')" title="Clique para abrir">${escapeHtml(t.title)}</div>
             ${t.createdBy ? `<div class="task-notes">por ${escapeHtml(t.createdBy)}</div>` : ''}
           </td>
           <td>${escapeHtml(getCompanyName(t.companyId))}</td>
@@ -3320,7 +3344,7 @@
       tbody.innerHTML = tasks.map(t => `
         <tr class="${isOverdue(t.date) ? 'overdue' : ''}">
           <td>
-            <div class="task-title-cell">${escapeHtml(t.title)}</div>
+            <div class="task-title-cell clickable" onclick="editTask('${t.id}')" title="Clique para abrir">${escapeHtml(t.title)}</div>
             ${t.createdBy ? `<div class="task-notes">criada por ${escapeHtml(t.createdBy)}</div>` : ''}
           </td>
           <td>${escapeHtml(getCompanyName(t.companyId))}</td>
@@ -3489,7 +3513,7 @@
              data-id="${t.id}"
              ondragstart="kanbanDragStart(event)"
              ondragend="kanbanDragEnd(event)">
-          <div class="kanban-card-title">${escapeHtml(t.title)}</div>
+          <div class="kanban-card-title clickable" onclick="event.stopPropagation(); editTask('${t.id}')" title="Clique para abrir">${escapeHtml(t.title)}</div>
           <div class="kanban-card-meta">
             ${t.priority ? `<span class="badge badge-${t.priority}">${t.priority}</span>` : ''}
             ${overdue ? '<span class="badge badge-overdue">Atrasada</span>' : ''}
@@ -4570,13 +4594,21 @@
     function saveModuleSettings() {
       if (!isAdmin()) return;
       const s = getSettings();
+      const chk = (id, def=true) => {
+        const el = document.getElementById(id);
+        return el ? el.checked : def;
+      };
       s.modules = {
-        inventario: document.getElementById('cfg-mod-inventario').checked,
-        empresas: document.getElementById('cfg-mod-empresas').checked,
-        kanban: document.getElementById('cfg-mod-kanban').checked,
-        arquivadas: document.getElementById('cfg-mod-arquivadas').checked,
-        backup: document.getElementById('cfg-mod-backup').checked,
-        relatorio: document.getElementById('cfg-mod-relatorio').checked
+        inventario: chk('cfg-mod-inventario'),
+        empresas: chk('cfg-mod-empresas'),
+        kanban: chk('cfg-mod-kanban'),
+        arquivadas: chk('cfg-mod-arquivadas'),
+        backup: chk('cfg-mod-backup'),
+        relatorio: chk('cfg-mod-relatorio'),
+        calendario: chk('cfg-mod-calendario', true),
+        checklist: chk('cfg-mod-checklist', true),
+        dicas: chk('cfg-mod-dicas', true),
+        historico: chk('cfg-mod-historico', true)
       };
       saveSettings(s);
       applyModuleVisibility();
@@ -4785,7 +4817,7 @@
         rows.push(`
           <tr>
             <td><span class="badge badge-pending">Tarefa</span></td>
-            <td><div class="task-title-cell">${highlightText(t.title, query.trim())}</div>
+            <td><div class="task-title-cell clickable" onclick="editTask('${t.id}')" title="Clique para abrir">${highlightText(t.title, query.trim())}</div>
               ${t.notes ? `<div class="task-notes">${highlightText(t.notes, query.trim())}</div>` : ''}
               ${t.createdBy ? `<div class="task-notes">por ${escapeHtml(t.createdBy)}</div>` : ''}</td>
             <td>${escapeHtml(company)}</td>
@@ -5323,7 +5355,7 @@
             <input type="checkbox" ${i.delivered ? 'checked' : ''} onchange="toggleChecklistDelivered('${i.id}', this.checked)" title="Confirmar entrega" />
           </td>
           <td>
-            <div class="task-title-cell" style="${i.delivered ? 'text-decoration:line-through;opacity:.75' : ''}">${escapeHtml(i.title)}</div>
+            <div class="task-title-cell clickable" style="${i.delivered ? 'text-decoration:line-through;opacity:.75' : ''}" onclick="editChecklistItem('${i.id}')" title="Clique para abrir">${escapeHtml(i.title)}</div>
             ${i.notes ? `<div class="task-notes">${escapeHtml(i.notes)}</div>` : ''}
           </td>
           <td>${escapeHtml(i.category || '—')}</td>
@@ -5472,6 +5504,17 @@
       const cancel = document.getElementById('btn-dica-cancel');
       if (cancel) cancel.style.display = 'none';
     }
+    function openDica(id) {
+      const item = (data.dicas || []).find(x => x.id === id);
+      if (!item) return;
+      // Se tem link, abre em nova aba; sempre permite editar pelo botão. Clique no título = editar/abrir painel
+      if (item.url && (item.type === 'link' || item.type === 'manual')) {
+        window.open(item.url, '_blank', 'noopener');
+      }
+      editDica(id);
+    }
+    window.openDica = openDica;
+
     function editDica(id) {
       if (typeof assertWritable === 'function' && !assertWritable()) return;
       const item = (data.dicas || []).find(x => x.id === id);
@@ -5578,7 +5621,7 @@
         return `<tr>
           <td>${dicaTypeBadge(d.type)}</td>
           <td>
-            <div class="task-title-cell">${escapeHtml(d.title)}</div>
+            <div class="task-title-cell clickable" onclick="openDica('${d.id}')" title="Clique para abrir">${escapeHtml(d.title)}</div>
             ${d.content ? `<div class="task-notes">${escapeHtml(d.content).slice(0, 160)}${d.content.length > 160 ? '…' : ''}</div>` : ''}
           </td>
           <td>${kwHtml || '—'}</td>
