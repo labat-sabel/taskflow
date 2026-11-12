@@ -821,12 +821,26 @@
     .attach-list { list-style:none; padding:0; margin:8px 0 0; }
     .attach-list li { display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:4px; }
     @media print {
-      .sidebar, .topbar, .menu-toggle, .btn, .filters-bar, .sidebar-footer, .bulk-bar, #nav-admin { display:none !important; }
-      .main { margin:0 !important; padding:0 !important; }
+      .sidebar, .topbar, .menu-toggle, .btn, .filters-bar, .sidebar-footer, .bulk-bar, #nav-admin,
+      .btn-logout, input[type="file"], #btn-test-cloud { display:none !important; }
+      .main { margin:0 !important; padding:0 !important; width:100% !important; }
+      .content { padding:0 !important; }
       .panel { display:none !important; }
-      .panel.active, #panel-resumo { display:block !important; }
-      body { background:#fff; }
+      body.print-reports .panel { display:none !important; }
+      body.print-reports #panel-relatorios { display:block !important; }
+      body.print-resumo #panel-resumo { display:block !important; }
+      body:not(.print-reports):not(.print-resumo) .panel.active { display:block !important; }
+      body { background:#fff !important; color:#000 !important; }
+      .card { box-shadow:none !important; border:1px solid #ccc !important; break-inside:avoid; }
+      .stat-card { break-inside:avoid; }
+      a { color:#000 !important; text-decoration:none !important; }
+      .print-only { display:block !important; }
+      .no-print { display:none !important; }
     }
+    .print-only { display:none; }
+    #report-print-header { margin-bottom:16px; padding-bottom:12px; border-bottom:2px solid #333; }
+    #report-print-header h1 { font-size:20px; margin:0 0 4px; }
+    #report-print-header p { margin:0; font-size:12px; color:#555; }
   </style>
 </head>
 <body>
@@ -1895,8 +1909,12 @@
 
         <!-- RELATÓRIOS -->
         <div class="panel" id="panel-relatorios">
+          <div id="report-print-header" class="print-only">
+            <h1>TaskFlow — Relatório de produtividade</h1>
+            <p id="report-print-meta">—</p>
+          </div>
           <div class="card" style="margin-bottom:16px">
-            <div class="card-header" style="flex-wrap:wrap;gap:8px">
+            <div class="card-header no-print" style="flex-wrap:wrap;gap:8px">
               <h3>Relatórios de produtividade</h3>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
                 <label class="task-notes" style="margin:0">De</label>
@@ -1906,6 +1924,7 @@
                 <button type="button" class="btn btn-outline btn-sm" onclick="setReportMonth(0)">Este mês</button>
                 <button type="button" class="btn btn-outline btn-sm" onclick="setReportMonth(-1)">Mês anterior</button>
                 <button type="button" class="btn btn-outline btn-sm" onclick="exportReportsCSV()">⬇ CSV</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="exportReportsPDF()">🖨 PDF</button>
               </div>
             </div>
             <div class="card-body">
@@ -2247,7 +2266,7 @@
     // ========== SUPABASE (GitHub Pages / cloud) ==========
     // Cole suas chaves em Settings → API (anon public JWT, começa com eyJ...)
     const SUPABASE_URL = 'https://zdnyjeuqvjqlnhtryzqx.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_wAPvyaH-1Hi__jZpxIAHUw_euOiFSIt';
+    const SUPABASE_ANON_KEY = 'COLE_SUA_ANON_KEY_AQUI';
 
     const supabaseReady = typeof supabase !== 'undefined'
       && SUPABASE_URL.startsWith('http')
@@ -5757,6 +5776,27 @@
       }).join('');
     }
 
+    function exportReportsPDF() {
+      ensureReportDates();
+      renderReports();
+      const from = (document.getElementById('rep-from') || {}).value || '';
+      const to = (document.getElementById('rep-to') || {}).value || '';
+      const meta = document.getElementById('report-print-meta');
+      if (meta) {
+        meta.textContent = 'Período: ' + (from || '—') + ' a ' + (to || '—')
+          + ' · Gerado em ' + new Date().toLocaleString('pt-BR')
+          + ' · Por ' + (getCurrentUser() || '—');
+      }
+      // garante painel ativo
+      goTo('relatorios');
+      document.body.classList.add('print-reports');
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => document.body.classList.remove('print-reports'), 300);
+      }, 200);
+      showToast('Na impressão, escolha “Salvar como PDF”');
+    }
+
     function exportReportsCSV() {
       const rows = getReportTasks();
       const header = ['Titulo','Protocolo','Categoria','Empresa','Responsavel','Status','Prioridade','Criada','Concluida','SLA_dias','Criado_por','Concluido_por'];
@@ -5972,6 +6012,7 @@
     window.testCloudConnection = testCloudConnection;
     window.setReportMonth = setReportMonth;
     window.exportReportsCSV = exportReportsCSV;
+    window.exportReportsPDF = exportReportsPDF;
     window.pesquisarDicas = pesquisarDicas;
     window.limparPesquisaDicas = limparPesquisaDicas;
     window.pesquisarPorPalavra = pesquisarPorPalavra;
