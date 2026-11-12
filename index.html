@@ -925,7 +925,11 @@
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           Calendário
         </button>
-                        <button class="nav-item" data-panel="historico">
+        <button class="nav-item" data-panel="relatorios">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Relatórios
+        </button>
+        <button class="nav-item" data-panel="historico">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           Histórico
         </button>
@@ -1227,6 +1231,14 @@
                 <div>
                   <label for="task-equipment">Equipamento vinculado</label>
                   <select id="task-equipment"><option value="">— Nenhum —</option></select>
+                </div>
+                <div>
+                  <label for="task-protocol">Protocolo / chamado</label>
+                  <input type="text" id="task-protocol" placeholder="Ex: 20262806074126" />
+                </div>
+                <div>
+                  <label for="task-dica">Dica / manual vinculado</label>
+                  <select id="task-dica"><option value="">— Nenhuma —</option></select>
                 </div>
                 <div class="form-full">
                   <label for="task-link">Link (URL)</label>
@@ -1627,7 +1639,11 @@
           <div class="card" style="margin-bottom:16px">
             <div class="card-header"><h3>Status do backup</h3></div>
             <div class="card-body">
-              <p class="task-notes" style="margin-bottom:12px">Os dados ficam neste navegador. Use o backup para compartilhar com o Danilo (ou outro PC) e não perder informações.</p>
+              <p class="task-notes" style="margin-bottom:12px">Os dados sincronizam com a nuvem quando o Supabase está configurado. Use o backup JSON como cópia de segurança.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-test-cloud" onclick="testCloudConnection()">🔌 Testar conexão Supabase</button>
+                <span id="cloud-test-result" class="task-notes"></span>
+              </div>
               <div class="stats-row" style="margin-bottom:0">
                 <div class="stat-card">
                   <div><div class="label">Tarefas</div><div class="value" id="backup-stat-tasks">0</div></div>
@@ -1876,15 +1892,77 @@
           </div>
         </div>
 
-        <!-- HISTÓRICO -->
-        <div class="panel" id="panel-historico">
+
+        <!-- RELATÓRIOS -->
+        <div class="panel" id="panel-relatorios">
           <div class="card" style="margin-bottom:16px">
-            <div class="card-header"><h3>Histórico de alterações</h3>
-              <button type="button" class="btn btn-outline btn-sm" onclick="if(isAdmin()&&confirm('Limpar histórico?')){data.auditLog=[];save();renderAuditLog();}">Limpar</button>
+            <div class="card-header" style="flex-wrap:wrap;gap:8px">
+              <h3>Relatórios de produtividade</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <label class="task-notes" style="margin:0">De</label>
+                <input type="date" id="rep-from" onchange="renderReports()" />
+                <label class="task-notes" style="margin:0">Até</label>
+                <input type="date" id="rep-to" onchange="renderReports()" />
+                <button type="button" class="btn btn-outline btn-sm" onclick="setReportMonth(0)">Este mês</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="setReportMonth(-1)">Mês anterior</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="exportReportsCSV()">⬇ CSV</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="stats-row" style="margin-bottom:16px">
+                <div class="stat-card"><div><div class="label">Criadas no período</div><div class="value" id="rep-created">0</div></div></div>
+                <div class="stat-card"><div><div class="label">Concluídas</div><div class="value" id="rep-done">0</div></div><div class="icon green">✓</div></div>
+                <div class="stat-card"><div><div class="label">Ainda abertas</div><div class="value" id="rep-open">0</div></div><div class="icon orange">○</div></div>
+                <div class="stat-card"><div><div class="label">SLA médio (dias)</div><div class="value" id="rep-sla" style="font-size:22px">—</div></div></div>
+              </div>
+              <div class="charts-row" style="margin-bottom:16px">
+                <div class="card chart-card"><h4>Por categoria</h4><div id="rep-chart-cat"></div></div>
+                <div class="card chart-card"><h4>Por responsável</h4><div id="rep-chart-assignee"></div></div>
+                <div class="card chart-card"><h4>Por prioridade</h4><div id="rep-chart-pri"></div></div>
+              </div>
+              <div class="charts-row" style="margin-bottom:16px">
+                <div class="card chart-card"><h4>Por empresa</h4><div id="rep-chart-company"></div></div>
+                <div class="card chart-card"><h4>Por quem concluiu</h4><div id="rep-chart-completedby"></div></div>
+                <div class="card chart-card"><h4>Protocolos no período</h4><div id="rep-chart-protocol"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Tarefas do período</h3>
+              <input type="search" id="rep-protocol-search" placeholder="Filtrar por protocolo..." oninput="renderReports()" style="max-width:220px" />
             </div>
             <div class="card-body" style="overflow-x:auto">
               <table>
-                <thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhe</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Tarefa</th><th>Protocolo</th><th>Categoria</th><th>Empresa</th>
+                    <th>Responsável</th><th>Status</th><th>Criada</th><th>Concluída</th><th>SLA</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-reports"></tbody>
+              </table>
+              <div class="empty" id="empty-reports" style="display:none"><p>Nenhuma tarefa no período.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HISTÓRICO -->
+        <div class="panel" id="panel-historico">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header" style="flex-wrap:wrap;gap:8px"><h3>Histórico de alterações</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <select id="audit-filter-user" onchange="renderAuditLog()">
+                  <option value="">Todos os usuários</option>
+                  <option value="Daniel">Daniel</option>
+                  <option value="Danilo">Danilo</option>
+                </select>
+                <input type="search" id="audit-filter-q" placeholder="Buscar no detalhe..." oninput="renderAuditLog()" style="max-width:180px" />
+                <button type="button" class="btn btn-outline btn-sm" onclick="if(isAdmin()&&confirm('Limpar histórico?')){data.auditLog=[];save();renderAuditLog();}">Limpar</button>
+              </div>
+            </div>
+            <div class="card-body" style="overflow-x:auto">
+              <table>
+                <thead><tr><th>Quando</th><th>Quem</th><th>O que fez</th><th>Onde</th><th>Detalhe</th></tr></thead>
                 <tbody id="tbody-audit"></tbody>
               </table>
               <div class="empty" id="empty-audit" style="display:none"><p>Nenhum registro ainda.</p></div>
@@ -2321,7 +2399,7 @@
       tagline: 'Faça login para continuar',
       modules: {
         inventario: true, empresas: true, kanban: true, arquivadas: true,
-        backup: true, relatorio: true, calendario: true, historico: true, checklist: true, dicas: true
+        backup: true, relatorio: true, calendario: true, historico: true, checklist: true, dicas: true, relatorios: true
       },
       compactMode: false,
       templates: [],
@@ -2489,7 +2567,8 @@
         calendario: '[data-panel="calendario"]',
         historico: '[data-panel="historico"]',
         checklist: '[data-panel="checklist"]',
-        dicas: '[data-panel="dicas"]'
+        dicas: '[data-panel="dicas"]',
+        relatorios: '[data-panel="relatorios"]'
       };
       Object.keys(map).forEach(key => {
         document.querySelectorAll(map[key]).forEach(el => {
@@ -2907,7 +2986,7 @@
       resumo: 'Resumo', kanban: 'Kanban', pendentes: 'Tarefas Pendentes', nova: 'Nova Tarefa',
       concluidas: 'Tarefas Concluídas', arquivadas: 'Arquivadas', empresas: 'Empresas',
       inventario: 'Inventário', backup: 'Backup e sincronização', senha: 'Alterar senha',
-      admin: 'Administração', busca: 'Busca', calendario: 'Calendário', checklist: 'Checklist mensal', dicas: 'Dicas e manuais', historico: 'Histórico'
+      admin: 'Administração', busca: 'Busca', calendario: 'Calendário', checklist: 'Checklist mensal', dicas: 'Dicas e manuais', relatorios: 'Relatórios', historico: 'Histórico'
     };
 
     function goTo(panel, opts = {}) {
@@ -2928,7 +3007,9 @@
       if (panel === 'calendario') renderCalendar();
       if (panel === 'checklist') renderChecklist();
       if (panel === 'dicas') renderDicas();
+      if (panel === 'relatorios') renderReports();
       if (panel === 'historico') renderAuditLog();
+      if (panel === 'nova' && typeof fillTaskDicaSelect === 'function') fillTaskDicaSelect();
       closeSidebar();
     }
 
@@ -3236,6 +3317,8 @@
             <div class="task-title-cell clickable" onclick="editTask('${t.id}')" title="Clique para abrir">${escapeHtml(t.title)}</div>
             ${t.notes ? `<div class="task-notes">${escapeHtml(t.notes)}</div>` : ''}
             ${t.equipmentCode ? `<div class="task-notes">💻 Equip. ${escapeHtml(t.equipmentCode)}</div>` : ''}
+            ${t.protocol ? `<div class="task-notes">🎫 Protocolo: <strong>${escapeHtml(t.protocol)}</strong></div>` : ''}
+            ${t.dicaId ? dicaLinkHtml(t.dicaId) : ''}
             ${(t.attachments && t.attachments.length) ? `<div class="task-notes">📎 ${t.attachments.length} anexo(s)</div>` : ''}
             ${t.category ? `<div class="task-notes">${escapeHtml(t.category)}</div>` : ''}
             ${linkHtml(t)}
@@ -3990,6 +4073,9 @@
       fillTaskTemplates();
       if (document.getElementById('task-template')) document.getElementById('task-template').value = '';
       if (document.getElementById('task-equipment')) document.getElementById('task-equipment').value = '';
+      if (document.getElementById('task-protocol')) document.getElementById('task-protocol').value = '';
+      fillTaskDicaSelect();
+      if (document.getElementById('task-dica')) document.getElementById('task-dica').value = '';
     }
 
     function editTask(id) {
@@ -4008,6 +4094,9 @@
       fillTaskEquipmentSelect();
       fillTaskTemplates();
       if (document.getElementById('task-equipment')) document.getElementById('task-equipment').value = t.equipmentCode || '';
+      fillTaskDicaSelect();
+      if (document.getElementById('task-protocol')) document.getElementById('task-protocol').value = t.protocol || '';
+      if (document.getElementById('task-dica')) document.getElementById('task-dica').value = t.dicaId || '';
       taskAttachmentsDraft = Array.isArray(t.attachments) ? t.attachments.slice() : [];
       renderAttachList();
       document.getElementById('task-form-title').textContent = 'Editar tarefa';
@@ -4343,6 +4432,8 @@
         link: document.getElementById('task-link').value.trim() || null,
         notes: document.getElementById('task-notes').value.trim() || null,
         equipmentCode: equipCode,
+        protocol: document.getElementById('task-protocol') ? (document.getElementById('task-protocol').value.trim() || null) : null,
+        dicaId: document.getElementById('task-dica') ? (document.getElementById('task-dica').value || null) : null,
         attachments: taskAttachmentsDraft.slice()
       };
       if (id) {
@@ -4995,15 +5086,23 @@
       const tbody = document.getElementById('tbody-audit');
       const empty = document.getElementById('empty-audit');
       if (!tbody) return;
-      const list = (data.auditLog || []).slice(0, 100);
-      if (!list.length) { tbody.innerHTML = ''; if (empty) empty.style.display = 'block'; }
-      else {
+      const userF = ((document.getElementById('audit-filter-user') || {}).value || '').trim();
+      const q = ((document.getElementById('audit-filter-q') || {}).value || '').trim().toLowerCase();
+      let list = (data.auditLog || []).slice();
+      if (userF) list = list.filter(a => (a.by || '') === userF);
+      if (q) list = list.filter(a => String(a.detail||'').toLowerCase().includes(q) || String(a.action||'').toLowerCase().includes(q));
+      list = list.slice(0, 200);
+      if (!list.length) {
+        tbody.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+      } else {
         if (empty) empty.style.display = 'none';
         tbody.innerHTML = list.map(a => `<tr>
           <td>${escapeHtml(formatDateTime(a.at))}</td>
-          <td>${escapeHtml(a.by)}</td>
-          <td>${escapeHtml(a.action)}</td>
-          <td>${escapeHtml(a.detail || '')}</td>
+          <td><strong>${escapeHtml(a.by || '—')}</strong></td>
+          <td>${escapeHtml(auditActionLabel(a.action))}</td>
+          <td>${escapeHtml(auditEntityLabel(a.entity))}</td>
+          <td>${escapeHtml(a.detail || '')}${a.entityId ? ` <span class="task-notes">#${escapeHtml(String(a.entityId).slice(0,12))}</span>` : ''}</td>
         </tr>`).join('');
       }
       const tbodyL = document.getElementById('tbody-logins');
@@ -5483,6 +5582,237 @@
     }
 
 
+
+    // ========== RELATÓRIOS / PROTOCOLO / DICA / CONEXÃO / AUDIT LABELS ==========
+    function fillTaskDicaSelect() {
+      const sel = document.getElementById('task-dica');
+      if (!sel) return;
+      const cur = sel.value;
+      const list = (data.dicas || []).slice().sort((a,b) => String(a.title||'').localeCompare(String(b.title||''),'pt-BR'));
+      sel.innerHTML = '<option value="">— Nenhuma —</option>' + list.map(d =>
+        `<option value="${escapeHtml(d.id)}">${escapeHtml(d.title)} (${escapeHtml(d.type || 'dica')})</option>`
+      ).join('');
+      if (cur) sel.value = cur;
+    }
+
+    function dicaLinkHtml(dicaId) {
+      const d = (data.dicas || []).find(x => x.id === dicaId);
+      if (!d) return '';
+      return `<div class="task-notes">📚 <a href="#" onclick="event.preventDefault();event.stopPropagation();openDica('${d.id}')">${escapeHtml(d.title)}</a></div>`;
+    }
+
+    function getDicaTitle(id) {
+      const d = (data.dicas || []).find(x => x.id === id);
+      return d ? d.title : '—';
+    }
+
+    function auditActionLabel(action) {
+      const map = {
+        task_create: 'Criou tarefa',
+        task_update: 'Atualizou tarefa',
+        task_archive: 'Arquivou tarefa',
+        task_delete: 'Excluiu tarefa',
+        bulk_complete: 'Concluiu em massa',
+        bulk_archive: 'Arquivou em massa',
+        bulk_progress: 'Marcou andamento em massa',
+        bulk_delete: 'Excluiu em massa',
+        checklist_add: 'Adicionou item no checklist',
+        checklist_update: 'Atualizou checklist',
+        checklist_done: 'Confirmou entrega (checklist)',
+        checklist_reopen: 'Reabriu item do checklist',
+        checklist_delete: 'Excluiu item do checklist',
+        checklist_copy: 'Copiou checklist do mês anterior',
+        dica_add: 'Adicionou dica/manual',
+        dica_update: 'Atualizou dica/manual',
+        dica_delete: 'Excluiu dica/manual',
+        import_excel: 'Importou inventário (Excel)',
+        login: 'Login'
+      };
+      return map[action] || action || '—';
+    }
+
+    function auditEntityLabel(entity) {
+      const map = { task: 'Tarefa', checklist: 'Checklist', dica: 'Dica/manual', equipment: 'Equipamento', company: 'Empresa' };
+      return map[entity] || entity || '—';
+    }
+
+    function setReportMonth(offset) {
+      const now = new Date();
+      const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      const from = new Date(d.getFullYear(), d.getMonth(), 1);
+      const to = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      const f = document.getElementById('rep-from');
+      const t = document.getElementById('rep-to');
+      if (f) f.value = from.toISOString().slice(0, 10);
+      if (t) t.value = to.toISOString().slice(0, 10);
+      renderReports();
+    }
+
+    function ensureReportDates() {
+      const f = document.getElementById('rep-from');
+      const t = document.getElementById('rep-to');
+      if (f && !f.value) setReportMonth(0);
+    }
+
+    function inReportRange(iso) {
+      if (!iso) return false;
+      const day = String(iso).slice(0, 10);
+      const f = (document.getElementById('rep-from') || {}).value || '0000-01-01';
+      const t = (document.getElementById('rep-to') || {}).value || '9999-12-31';
+      return day >= f && day <= t;
+    }
+
+    function daysBetween(a, b) {
+      if (!a || !b) return null;
+      const da = new Date(String(a).slice(0, 10) + 'T12:00:00');
+      const db = new Date(String(b).slice(0, 10) + 'T12:00:00');
+      if (isNaN(da) || isNaN(db)) return null;
+      return Math.max(0, Math.round((db - da) / 86400000));
+    }
+
+    function repBarChart(elId, entries) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      if (!entries.length) { el.innerHTML = '<p class="task-notes">Sem dados</p>'; return; }
+      const max = Math.max(1, ...entries.map(e => e[1]));
+      el.innerHTML = entries.map(([label, n]) =>
+        `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px">
+          <span style="width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+          <div style="flex:1;background:var(--border);border-radius:4px;height:10px"><div style="width:${(n/max)*100}%;background:var(--primary);height:100%;border-radius:4px"></div></div>
+          <strong style="width:28px;text-align:right">${n}</strong>
+        </div>`
+      ).join('');
+    }
+
+    function countBy(arr, keyFn) {
+      const m = {};
+      arr.forEach(x => {
+        const k = keyFn(x) || '—';
+        m[k] = (m[k] || 0) + 1;
+      });
+      return Object.entries(m).sort((a,b) => b[1]-a[1]);
+    }
+
+    function getReportTasks() {
+      ensureReportDates();
+      const protoQ = ((document.getElementById('rep-protocol-search') || {}).value || '').trim().toLowerCase();
+      let list = (data.tasks || []).filter(t => {
+        const created = t.createdAt && inReportRange(t.createdAt);
+        const completed = t.completedAt && inReportRange(t.completedAt);
+        return created || completed || (isOpen(t) && inReportRange(t.date));
+      });
+      if (protoQ) {
+        list = list.filter(t => String(t.protocol || '').toLowerCase().includes(protoQ)
+          || String(t.title || '').toLowerCase().includes(protoQ)
+          || String(t.notes || '').toLowerCase().includes(protoQ));
+      }
+      return list;
+    }
+
+    function renderReports() {
+      ensureReportDates();
+      const all = data.tasks || [];
+      const created = all.filter(t => t.createdAt && inReportRange(t.createdAt));
+      const done = all.filter(t => t.completedAt && inReportRange(t.completedAt));
+      const openInPeriod = all.filter(t => isOpen(t) && !isArchived(t));
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('rep-created', created.length);
+      set('rep-done', done.length);
+      set('rep-open', openInPeriod.length);
+      const slas = done.map(t => daysBetween(t.createdAt, t.completedAt)).filter(x => x != null);
+      const avgSla = slas.length ? (slas.reduce((a,b)=>a+b,0) / slas.length) : null;
+      set('rep-sla', avgSla != null ? avgSla.toFixed(1) : '—');
+
+      repBarChart('rep-chart-cat', countBy(created.concat(done), t => t.category || 'Sem categoria').slice(0, 10));
+      repBarChart('rep-chart-assignee', countBy(created.concat(done), t => t.assignee || t.createdBy || '—').slice(0, 10));
+      repBarChart('rep-chart-pri', countBy(created.concat(done), t => t.priority || 'media'));
+      repBarChart('rep-chart-company', countBy(created.concat(done), t => getCompanyName(t.companyId) || '—').slice(0, 10));
+      repBarChart('rep-chart-completedby', countBy(done, t => t.completedBy || '—'));
+      const withProto = created.concat(done).filter(t => t.protocol);
+      repBarChart('rep-chart-protocol', countBy(withProto, t => t.protocol).slice(0, 10));
+
+      const rows = getReportTasks().slice().sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+      const tbody = document.getElementById('tbody-reports');
+      const empty = document.getElementById('empty-reports');
+      if (!tbody) return;
+      if (!rows.length) {
+        tbody.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      if (empty) empty.style.display = 'none';
+      tbody.innerHTML = rows.map(t => {
+        const sla = daysBetween(t.createdAt, t.completedAt);
+        return `<tr>
+          <td><div class="task-title-cell clickable" onclick="editTask('${t.id}')">${escapeHtml(t.title)}</div></td>
+          <td>${t.protocol ? `<strong>${escapeHtml(t.protocol)}</strong>` : '—'}</td>
+          <td>${escapeHtml(t.category || '—')}</td>
+          <td>${escapeHtml(getCompanyName(t.companyId))}</td>
+          <td>${escapeHtml(t.assignee || t.createdBy || '—')}</td>
+          <td>${statusBadge(t)}</td>
+          <td>${t.createdAt ? escapeHtml(formatDate(t.createdAt)) : '—'}</td>
+          <td>${t.completedAt ? escapeHtml(formatDate(t.completedAt)) : '—'}</td>
+          <td>${sla != null ? sla + 'd' : '—'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function exportReportsCSV() {
+      const rows = getReportTasks();
+      const header = ['Titulo','Protocolo','Categoria','Empresa','Responsavel','Status','Prioridade','Criada','Concluida','SLA_dias','Criado_por','Concluido_por'];
+      const lines = [header.join(';')];
+      rows.forEach(t => {
+        const sla = daysBetween(t.createdAt, t.completedAt);
+        const st = taskStatus(t);
+        lines.push([
+          t.title, t.protocol||'', t.category||'', getCompanyName(t.companyId),
+          t.assignee||'', st, t.priority||'', t.createdAt||'', t.completedAt||'',
+          sla != null ? sla : '', t.createdBy||'', t.completedBy||''
+        ].map(c => '"' + String(c).replace(/"/g,'""') + '"').join(';'));
+      });
+      const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'relatorio-taskflow.csv';
+      a.click();
+      showToast('CSV exportado');
+    }
+
+    async function testCloudConnection() {
+      const out = document.getElementById('cloud-test-result');
+      const set = (msg, ok) => {
+        if (out) {
+          out.textContent = msg;
+          out.style.color = ok ? 'var(--success)' : 'var(--danger)';
+        }
+        const cs = document.getElementById('cloud-status');
+        if (cs && ok) cs.textContent = '● Online';
+        if (cs && !ok && sb) cs.textContent = '○ Erro';
+      };
+      if (!sb) {
+        set('Supabase não configurado (URL/anon key).', false);
+        showToast('Configure SUPABASE_URL e ANON_KEY');
+        return;
+      }
+      set('Testando…', true);
+      try {
+        const t0 = performance.now();
+        const { data: row, error } = await sb.from('workspace').select('id, updated_at, updated_by').eq('id', 'main').maybeSingle();
+        if (error) throw error;
+        const ms = Math.round(performance.now() - t0);
+        const { data: sess } = await sb.auth.getSession();
+        const user = sess && sess.session && sess.session.user ? (sess.session.user.email || 'ok') : 'sem sessão (faça login)';
+        const when = row && row.updated_at ? formatDateTime(row.updated_at) : 'workspace vazio';
+        set(`OK · ${ms}ms · workspace: ${when} · auth: ${user}`, true);
+        showToast('Conexão Supabase OK');
+      } catch (e) {
+        console.error(e);
+        set('Falha: ' + (e.message || e), false);
+        showToast('Falha na conexão');
+      }
+    }
+
+
     // ========== DICAS / MANUAIS ==========
     function dicaTypeLabel(t) {
       return ({ dica: 'Dica', link: 'Link útil', manual: 'Manual', procedimento: 'Procedimento' })[t] || t || 'Dica';
@@ -5638,6 +5968,10 @@
     window.deleteDica = deleteDica;
     window.resetDicaForm = resetDicaForm;
     window.renderDicas = renderDicas;
+    window.renderReports = renderReports;
+    window.testCloudConnection = testCloudConnection;
+    window.setReportMonth = setReportMonth;
+    window.exportReportsCSV = exportReportsCSV;
     window.pesquisarDicas = pesquisarDicas;
     window.limparPesquisaDicas = limparPesquisaDicas;
     window.pesquisarPorPalavra = pesquisarPorPalavra;
